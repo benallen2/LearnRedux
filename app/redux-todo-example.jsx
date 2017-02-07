@@ -8,11 +8,11 @@ var stateDefault = {
   todos: []
 }
 
-//changeSearchText action take searchText prop. Create reducer switch for type
+//render subscribe everytime state changes
 
 var reducer = (state = stateDefault, action) => {
 
-  switch (action.type){
+  switch (action.type) {
     case "CHANGE_SEARCH_TEXT":
       return {
         ...state,
@@ -21,17 +21,26 @@ var reducer = (state = stateDefault, action) => {
     default:
       return state;
   }
+};
 
-  return state;
-}
+var store = redux.createStore(reducer, redux.compose(
+  window.devToolsExtension ? window.devToolsExtension() : f => f
+));
 
-var store = redux.createStore(reducer);
+var unsubscribe = store.subscribe(() => {
+  var state = store.getState();
 
-console.log('current state:', store.getState());
+  console.log('new text', state.searchText);
+  document.getElementById('app').innerHTML = state.searchText;
+})
+
 
 store.dispatch({
-  type: "CHANGE_SEARCH_TEXT",
-  searchText: "new Text"
+  type: 'CHANGE_SEARCH_TEXT',
+  searchText: 'work'
 });
 
-console.log('new state', store.getState());
+store.dispatch({
+  type: 'CHANGE_SEARCH_TEXT',
+  searchText: 'Play'
+})
