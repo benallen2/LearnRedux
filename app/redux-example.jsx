@@ -1,4 +1,5 @@
 var redux = require('redux');
+var axios = require('axios');
 
 var stateDefault = {
   name: 'Anonymous',
@@ -86,20 +87,64 @@ var addMovie = (movie, genre) => {
     type: 'ADD_MOVIE',
     movie,
     genre
-  }
+  };
 };
 
 var removeMovie = (id) => {
   return {
     type: 'REMOVE_MOVIE',
     id
+  };
+};
+
+//map Reducer and action generators
+//------------------------
+var mapReducer = (state = {isFetching: false, url: undefined}, action) => {
+  switch (action.type) {
+    case 'START_LOCTATION_FETCH':
+      return {
+        isFetching: true,
+        url: undefined
+      }
+    case 'COMPLETE_LOCATION_FETCH':
+      return {
+        isFetching: false,
+        url: action.url
+      }
+    default:
+      return state;
   }
 };
+
+var startLocationFetch = () => {
+  return {
+    type: 'START_LOCTATION_FETCH'
+  }
+};
+
+var completeLocationFetch = (url) => {
+  return {
+    type: 'COMPLETE_LOCATION_FETCH',
+    url
+  }
+};
+
+var fetchLocation = () => {
+  store.dispatch(startLocationFetch());
+
+  axios.get('http://ipinfo.io').then(function (res) {
+    var loc = res.data.loc;
+    var baseUrl = 'http://maps.google.com?q=';
+
+    store.dispatch(completeLocationFetch(baseUrl + loc))
+  })
+}
 
 var reducer = redux.combineReducers({
   name: nameReducer,
   hobbies: hobbiesReducer,
-  movies: moviesReducer
+  movies: moviesReducer,
+  map: mapReducer
 });
 
 var store = redux.createStore(reducer, redux.compose(
@@ -110,8 +155,11 @@ var store = redux.createStore(reducer, redux.compose(
 var unsubscribe = store.subscribe(() => {
   var state = store.getState();
 
-  console.log('name is:', state.name);
-  document.getElementById('app').innerHTML = state.name;
+  if (state.map.isFecthing) {
+    document.getElementById('app').innerHTML = 'Loading...';
+  } else if (state.map.url) {
+    document.getElementById('app').innerHTML = '<a href="' + state.map.url + '" target="_blank">View Your Location</a>'
+  }
 })
 // unsubscribe();
 
@@ -119,6 +167,10 @@ var currentState = store.getState();
 
 console.log('Current State: ', currentState);
 
+fetchLocation();
+
+
+//dispatch calls
 store.dispatch(changeName('Ben'));
 
 store.dispatch(changeName('Anna'));
